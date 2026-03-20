@@ -25,19 +25,18 @@ export default async function handler(req, res) {
     const payload = {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      tools: [{ type: 'web_search_20260209', name: 'web_search' }],
       messages: body.messages
     };
 
-    console.log('Sending to Anthropic:', JSON.stringify(payload).substring(0, 200));
+    console.log('Sending payload:', JSON.stringify(payload).substring(0, 300));
 
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'web-search-2025-03-05'
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify(payload)
     });
@@ -45,7 +44,7 @@ export default async function handler(req, res) {
     const data = await upstream.json();
 
     if (!upstream.ok) {
-      console.error('Anthropic error:', JSON.stringify(data));
+      console.error('Anthropic error status:', upstream.status, 'body:', JSON.stringify(data));
     }
 
     return res.status(upstream.status).json(data);
