@@ -15,6 +15,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
+    console.error('ANTHROPIC_API_KEY is not set');
     return res.status(500).json({ error: 'API key not configured' });
   }
 
@@ -22,11 +23,13 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
     const payload = {
-      model: body.model || 'claude-sonnet-4-20250514',
-      max_tokens: body.max_tokens || 1000,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages: body.messages
     };
+
+    console.log('Sending to Anthropic:', JSON.stringify(payload).substring(0, 200));
 
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -40,9 +43,14 @@ export default async function handler(req, res) {
     });
 
     const data = await upstream.json();
+
+    if (!upstream.ok) {
+      console.error('Anthropic error:', JSON.stringify(data));
+    }
+
     return res.status(upstream.status).json(data);
   } catch (err) {
-    console.error('Proxy error:', err);
+    console.error('Proxy error:', err.message);
     return res.status(502).json({ error: 'Upstream request failed', detail: err.message });
   }
 }
