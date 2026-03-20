@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY is not set');
+    console.error('MISSING API KEY');
     return res.status(500).json({ error: 'API key not configured' });
   }
 
@@ -29,8 +29,6 @@ export default async function handler(req, res) {
       messages: body.messages
     };
 
-    console.log('Sending payload:', JSON.stringify(payload).substring(0, 300));
-
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -41,11 +39,11 @@ export default async function handler(req, res) {
       body: JSON.stringify(payload)
     });
 
-    const data = await upstream.json();
+    const rawText = await upstream.text();
+    console.error('Anthropic raw response:', upstream.status, rawText.substring(0, 500));
 
-    if (!upstream.ok) {
-      console.error('Anthropic error status:', upstream.status, 'body:', JSON.stringify(data));
-    }
+    let data;
+    try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
     return res.status(upstream.status).json(data);
   } catch (err) {
