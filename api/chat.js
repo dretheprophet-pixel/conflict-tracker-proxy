@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
     const payload = {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-6',
       max_tokens: 1000,
       tools: [{ type: 'web_search_20260209', name: 'web_search' }],
       messages: body.messages
@@ -40,7 +40,9 @@ export default async function handler(req, res) {
     });
 
     const rawText = await upstream.text();
-    console.error('Anthropic raw response:', upstream.status, rawText.substring(0, 500));
+    if (!upstream.ok) {
+      console.error('Anthropic error:', upstream.status, rawText.substring(0, 500));
+    }
 
     let data;
     try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
