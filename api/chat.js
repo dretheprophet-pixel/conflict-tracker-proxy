@@ -1,3 +1,5 @@
+export const config = { api: { bodyParser: true } };
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://dretheprophet-pixel.github.io');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -17,6 +19,15 @@ export default async function handler(req, res) {
   }
 
   try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+
+    const payload = {
+      model: body.model || 'claude-sonnet-4-20250514',
+      max_tokens: body.max_tokens || 1000,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: body.messages
+    };
+
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -25,13 +36,13 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
         'anthropic-beta': 'web-search-2025-03-05'
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(payload)
     });
 
     const data = await upstream.json();
     return res.status(upstream.status).json(data);
   } catch (err) {
     console.error('Proxy error:', err);
-    return res.status(502).json({ error: 'Upstream request failed' });
+    return res.status(502).json({ error: 'Upstream request failed', detail: err.message });
   }
 }
