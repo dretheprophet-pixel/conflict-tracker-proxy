@@ -19,8 +19,7 @@ export default async function handler(req, res) {
 
     const payload = {
       model: 'claude-opus-4-6',
-      max_tokens: 1000,
-      stream: true,
+      max_tokens: 2000,
       tools: [{ type: 'web_search_20260209', name: 'web_search' }],
       messages: body.messages
     };
@@ -30,34 +29,16 @@ export default async function handler(req, res) {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'interleaved-thinking-2025-05-14'
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify(payload)
     });
 
-    if (!upstream.ok) {
-      const err = await upstream.text();
-      return res.status(upstream.status).json({ error: err });
-    }
+    const data = await upstream.json();
+    return res.status(upstream.status).json(data);
 
-    // Pipe the stream straight through to the client
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    const reader = upstream.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(decoder.decode(value, { stream: true }));
-    }
-
-    res.end();
   } catch (err) {
     console.error('Proxy error:', err.message);
-    res.status(502).json({ error: 'Upstream request failed', detail: err.message });
+    return res.status(502).json({ error: 'Upstream request failed', detail: err.message });
   }
 }
