@@ -20,7 +20,6 @@ export default async function handler(req, res) {
     const payload = {
       model: 'claude-opus-4-6',
       max_tokens: 2000,
-      tools: [{ type: 'web_search_20260209', name: 'web_search' }],
       messages: body.messages
     };
 
